@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
+<title>壮壮同学 · 单词朗读</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Microsoft YaHei','PingFang SC',system-ui,sans-serif;background:#f0f4f8;min-height:100vh;color:#1a202c;}
+.app{max-width:960px;margin:0 auto;padding:12px 12px 60px;}
+.page-header{text-align:center;padding:20px 16px 14px;background:white;border-radius:16px;border:1px solid #e2e8f0;margin-bottom:14px;}
+.page-header .label{font-size:12px;color:#718096;margin-bottom:4px;}
+.page-header h1{font-size:22px;font-weight:700;color:#1a202c;margin-bottom:4px;}
+.page-header .sub{font-size:13px;color:#a0aec0;}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;scrollbar-width:none;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{flex-shrink:0;padding:7px 16px;border-radius:20px;border:1.5px solid #e2e8f0;background:white;font-size:12px;font-weight:600;cursor:pointer;color:#718096;white-space:nowrap;}
+.tab.active{color:white;border-color:transparent;}
+.detail-panel{background:white;border:1px solid #e2e8f0;border-radius:16px;padding:16px;margin-bottom:14px;display:none;box-shadow:0 4px 20px rgba(0,0,0,0.08);position:sticky;top:0;z-index:100;}
+.detail-inner{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;}
+.detail-cat{display:inline-block;font-size:11px;padding:3px 10px;border-radius:20px;margin-bottom:8px;font-weight:600;}
+.detail-word{font-size:1.9rem;font-weight:700;font-family:'Consolas','Courier New',monospace;margin-bottom:2px;line-height:1.2;}
+.detail-phonetic{font-size:13px;color:#a0aec0;margin-bottom:6px;}
+.detail-full{font-size:12px;color:#4a5568;margin-bottom:6px;display:none;}
+.detail-meaning{font-size:15px;color:#1a202c;font-weight:700;margin-bottom:12px;}
+.btn-say,.btn-slow{display:inline-flex;align-items:center;gap:5px;font-size:13px;padding:8px 16px;cursor:pointer;border-radius:10px;font-family:inherit;}
+.btn-say{background:white;border:1px solid #cbd5e0;color:#1a202c;}
+.btn-slow{background:#fffbeb;border:1px solid #f6d860;color:#92400e;}
+.say-row{display:flex;gap:8px;flex-wrap:wrap;}
+.anim-box{border-radius:12px;height:170px;display:flex;align-items:center;justify-content:center;border:1px solid #e2e8f0;font-size:56px;overflow:hidden;}
+.section-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #e2e8f0;}
+.section-header h2{font-size:15px;font-weight:700;}
+.s-badge{font-size:11px;padding:2px 10px;border-radius:20px;font-weight:600;}
+.s-count{font-size:12px;color:#a0aec0;margin-left:auto;}
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:8px;margin-bottom:20px;}
+.word-card{background:white;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 8px;cursor:pointer;text-align:center;user-select:none;transition:transform 0.15s;}
+.word-card:active{transform:scale(0.95);}
+.word-card.active{border-width:2px;}
+.card-icon{font-size:20px;margin-bottom:3px;display:block;}
+.card-word{font-size:11px;font-weight:700;font-family:'Consolas','Courier New',monospace;margin-bottom:2px;word-break:break-all;}
+.card-mn{font-size:10px;color:#718096;}
+.search-wrap{position:relative;margin-bottom:14px;}
+.search-input{width:100%;padding:11px 40px;border-radius:24px;border:1.5px solid #e2e8f0;background:white;font-size:14px;font-family:inherit;color:#1a202c;outline:none;}
+.search-input:focus{border-color:#90cdf4;}
+.search-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none;}
+.search-clear{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:18px;cursor:pointer;color:#a0aec0;display:none;}
+.search-results{display:none;}
+.search-empty{text-align:center;padding:40px;color:#a0aec0;font-size:14px;}
+@keyframes bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(-26px);}}
+@keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.2);}}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-13px);}}
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-8px);}75%{transform:translateX(8px);}}
+@keyframes wave{0%,100%{transform:rotate(0deg);}25%{transform:rotate(-20deg);}75%{transform:rotate(20deg);}}
+@keyframes swing{0%,100%{transform:rotate(-15deg);}50%{transform:rotate(15deg);}}
+@media(max-width:600px){.detail-inner{grid-template-columns:1fr;}.anim-box{height:120px;font-size:46px;}.detail-word{font-size:1.5rem;}.cards-grid{grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px;}}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="page-header">
+  <div class="label">📖 点击单词即可朗读</div>
+  <h1>壮壮同学 单词朗读</h1>
+  <div class="sub">8个分类 · 共80个单词 · 点击朗读 · 慢速练习</div>
+</div>
+<div class="search-wrap">
+  <span class="search-icon">🔍</span>
+  <input class="search-input" id="searchInput" type="text" placeholder="搜索单词或中文含义..." oninput="doSearch(this.value)" autocomplete="off">
+  <button class="search-clear" id="searchClear" onclick="clearSearch()">✕</button>
+</div>
+<div class="tabs" id="tabBar"></div>
+<div class="detail-panel" id="detailPanel">
+  <div class="detail-inner">
+    <div>
+      <span class="detail-cat" id="dCat"></span>
+      <div class="detail-word" id="dWord"></div>
+      <div class="detail-phonetic" id="dPh"></div>
+      <div class="detail-full" id="dFull"></div>
+      <div class="detail-meaning" id="dMn"></div>
+      <div class="say-row">
+        <button class="btn-say" onclick="playWord(1)">🔊 朗读</button>
+        <button class="btn-slow" onclick="playWord(0.5)">🐢 慢读</button>
+      </div>
+    </div>
+    <div class="anim-box" id="animBox"><span id="animIcon">📖</span></div>
+  </div>
+</div>
+<div id="mainContent"></div>
+<div class="search-results" id="searchResults"></div>
+</div>
+<script>
+const catMeta={"c0": {"label": "图1", "color": "#2B6CB0", "bg": "#ebf4ff"}, "c1": {"label": "图2", "color": "#6B46C1", "bg": "#f0ebfa"}, "c2": {"label": "图3", "color": "#276749", "bg": "#e6f4ed"}, "c3": {"label": "图4", "color": "#C05621", "bg": "#fdf0e6"}, "c4": {"label": "图5", "color": "#97266D", "bg": "#fce4f0"}, "c5": {"label": "图6", "color": "#B7791F", "bg": "#fef8e6"}, "c6": {"label": "图7", "color": "#0987A0", "bg": "#e6fbff"}, "c7": {"label": "图8", "color": "#9B2C2C", "bg": "#fdeaea"}};
+const words={"c0": [{"word": "hello", "ph": "/həˈloʊ/", "mn": "你好", "ic": "👋", "full": ""}, {"word": "who", "ph": "/huː/", "mn": "谁", "ic": "❓", "full": ""}, {"word": "what", "ph": "/wʌt/", "mn": "什么", "ic": "❔", "full": ""}, {"word": "nice", "ph": "/naɪs/", "mn": "好的；令人愉快的", "ic": "😊", "full": ""}, {"word": "your", "ph": "/jʊr/", "mn": "你的；你们的", "ic": "👉", "full": ""}, {"word": "meet", "ph": "/miːt/", "mn": "遇见；见面", "ic": "🤝", "full": ""}, {"word": "you", "ph": "/juː/", "mn": "你；你们", "ic": "🫵", "full": ""}, {"word": "bag", "ph": "/bæɡ/", "mn": "包；书包", "ic": "🎒", "full": ""}, {"word": "good", "ph": "/ɡʊd/", "mn": "好的", "ic": "👍", "full": ""}, {"word": "boy", "ph": "/bɔɪ/", "mn": "男孩", "ic": "👦", "full": ""}, {"word": "morning", "ph": "/ˈmɔːr.nɪŋ/", "mn": "早晨；上午", "ic": "🌅", "full": ""}], "c1": [{"word": "girl", "ph": "/ɡɜːrl/", "mn": "女孩", "ic": "👧", "full": ""}, {"word": "afternoon", "ph": "/ˌæf.tɚˈnuːn/", "mn": "下午", "ic": "🌇", "full": ""}, {"word": "father", "ph": "/ˈfɑː.ðɚ/", "mn": "父亲", "ic": "👨", "full": ""}, {"word": "miss", "ph": "/mɪs/", "mn": "小姐；女士（对未婚女性的称呼）", "ic": "👩", "full": ""}, {"word": "mother", "ph": "/ˈmʌð.ɚ/", "mn": "母亲", "ic": "👩", "full": ""}, {"word": "brother", "ph": "/ˈbrʌð.ɚ/", "mn": "兄弟；哥哥；弟弟", "ic": "👦", "full": ""}, {"word": "sister", "ph": "/ˈsɪs.tɚ/", "mn": "姐妹；姐姐；妹妹", "ic": "👧", "full": ""}, {"word": "dress", "ph": "/dres/", "mn": "连衣裙", "ic": "👗", "full": ""}, {"word": "spring", "ph": "/sprɪŋ/", "mn": "春天", "ic": "🌸", "full": ""}, {"word": "shirt", "ph": "/ʃɜːrt/", "mn": "衬衫", "ic": "👕", "full": ""}], "c2": [{"word": "summer", "ph": "/ˈsʌm.ɚ/", "mn": "夏天", "ic": "☀️", "full": ""}, {"word": "skirt", "ph": "/skɜːrt/", "mn": "裙子；短裙", "ic": "👗", "full": ""}, {"word": "autumn", "ph": "/ˈɔː.təm/", "mn": "秋天", "ic": "🍂", "full": ""}, {"word": "coat", "ph": "/koʊt/", "mn": "外套；大衣", "ic": "🧥", "full": ""}, {"word": "winter", "ph": "/ˈwɪn.tɚ/", "mn": "冬天", "ic": "❄️", "full": ""}, {"word": "cap", "ph": "/kæp/", "mn": "帽子；便帽", "ic": "🧢", "full": ""}, {"word": "hot", "ph": "/hɒt/", "mn": "热的", "ic": "🔥", "full": ""}, {"word": "shirt", "ph": "/ʃɜːt/", "mn": "衬衫", "ic": "👕", "full": ""}, {"word": "cold", "ph": "/kəʊld/", "mn": "冷的", "ic": "❄️", "full": ""}, {"word": "trousers", "ph": "/ˈtraʊ.zəz/", "mn": "裤子", "ic": "👖", "full": ""}, {"word": "kill", "ph": "/kɪl/", "mn": "杀死", "ic": "🔪", "full": ""}], "c3": [{"word": "warm", "ph": "/wɔːm/", "mn": "温暖的", "ic": "🌤️", "full": ""}, {"word": "like", "ph": "/laɪk/", "mn": "喜欢", "ic": "❤️", "full": ""}, {"word": "cool", "ph": "/kuːl/", "mn": "凉爽的；酷的", "ic": "😎", "full": ""}, {"word": "play", "ph": "/pleɪ/", "mn": "玩；玩耍", "ic": "⚽", "full": ""}, {"word": "run", "ph": "/rʌn/", "mn": "跑；奔跑", "ic": "🏃", "full": ""}, {"word": "jump", "ph": "/dʒʌmp/", "mn": "跳；跳跃", "ic": "🤸", "full": ""}, {"word": "swim", "ph": "/swɪm/", "mn": "游泳", "ic": "🏊", "full": ""}, {"word": "tiger", "ph": "/ˈtaɪ.ɡə/", "mn": "老虎", "ic": "🐯", "full": ""}, {"word": "rice", "ph": "/raɪs/", "mn": "米饭；大米", "ic": "🍚", "full": ""}, {"word": "panda", "ph": "/ˈpæn.də/", "mn": "熊猫", "ic": "🐼", "full": ""}], "c4": [{"word": "fish", "ph": "/fɪʃ/", "mn": "鱼", "ic": "🐟", "full": ""}, {"word": "monkey", "ph": "/ˈmʌŋ.ki/", "mn": "猴子", "ic": "🐵", "full": ""}, {"word": "bread", "ph": "/bred/", "mn": "面包", "ic": "🍞", "full": ""}, {"word": "bear", "ph": "/beə/", "mn": "熊", "ic": "🐻", "full": ""}, {"word": "chicken", "ph": "/ˈtʃɪk.ɪn/", "mn": "鸡；鸡肉", "ic": "🐔", "full": ""}, {"word": "cute", "ph": "/kjuːt/", "mn": "可爱的", "ic": "🥰", "full": ""}, {"word": "noodles", "ph": "/ˈnuː.dəlz/", "mn": "面条", "ic": "🍜", "full": ""}, {"word": "funny", "ph": "/ˈfʌn.i/", "mn": "有趣的；好笑的", "ic": "😂", "full": ""}, {"word": "vegetable", "ph": "/ˈvedʒ.tə.bəl/", "mn": "蔬菜", "ic": "🥦", "full": ""}, {"word": "beautiful", "ph": "/ˈbjuː.tɪ.fəl/", "mn": "美丽的；漂亮的", "ic": "🌸", "full": ""}, {"word": "rainbow", "ph": "/ˈreɪn.bəʊ/", "mn": "彩虹", "ic": "🌈", "full": ""}], "c5": [{"word": "school", "ph": "/skuːl/", "mn": "学校", "ic": "🏫", "full": ""}, {"word": "classroom", "ph": "/ˈklɑːs.ruːm/", "mn": "教室", "ic": "🏫", "full": ""}, {"word": "book", "ph": "/bʊk/", "mn": "书；书本", "ic": "📚", "full": ""}, {"word": "pen", "ph": "/pen/", "mn": "钢笔；笔", "ic": "🖊️", "full": ""}, {"word": "time", "ph": "/taɪm/", "mn": "时间", "ic": "⏰", "full": ""}, {"word": "clock", "ph": "/klɒk/", "mn": "钟；时钟", "ic": "🕰️", "full": ""}, {"word": "minute", "ph": "/ˈmɪn.ɪt/", "mn": "分钟", "ic": "⏱️", "full": ""}, {"word": "sunny", "ph": "/ˈsʌn.i/", "mn": "晴朗的；阳光充足的", "ic": "☀️", "full": ""}, {"word": "park", "ph": "/pɑːk/", "mn": "公园", "ic": "🌳", "full": ""}], "c6": [{"word": "rainy", "ph": "/ˈreɪ.ni/", "mn": "下雨的；多雨的", "ic": "🌧️", "full": ""}, {"word": "zoo", "ph": "/zuː/", "mn": "动物园", "ic": "🦁", "full": ""}, {"word": "windy", "ph": "/ˈwɪn.di/", "mn": "有风的；刮风的", "ic": "🌬️", "full": ""}, {"word": "swim", "ph": "/swɪm/", "mn": "游泳", "ic": "🏊", "full": ""}, {"word": "cloudy", "ph": "/ˈklaʊ.di/", "mn": "多云的；阴天的", "ic": "☁️", "full": ""}, {"word": "dance", "ph": "/dɑːns/", "mn": "跳舞；舞蹈", "ic": "💃", "full": ""}, {"word": "be", "ph": "/biː/", "mn": "是；成为", "ic": "📖", "full": ""}, {"word": "snowy", "ph": "/ˈsnəʊ.i/", "mn": "下雪的；多雪的", "ic": "❄️", "full": ""}, {"word": "sing", "ph": "/sɪŋ/", "mn": "唱歌", "ic": "🎤", "full": ""}, {"word": "morning", "ph": "/ˈmɔː.nɪŋ/", "mn": "早晨；上午", "ic": "🌅", "full": ""}, {"word": "Friday", "ph": "/ˈfraɪ.deɪ/", "mn": "星期五", "ic": "📅", "full": "Friday"}, {"word": "draw", "ph": "/drɔː/", "mn": "画；绘画", "ic": "✏️", "full": ""}], "c7": [{"word": "evening", "ph": "/ˈiːv.nɪŋ/", "mn": "傍晚；晚上", "ic": "🌆", "full": ""}, {"word": "write", "ph": "/raɪt/", "mn": "写；书写", "ic": "✍️", "full": ""}, {"word": "weekend", "ph": "/ˌwiːkˈend/", "mn": "周末", "ic": "🗓️", "full": ""}, {"word": "afternoon", "ph": "/ˌɑːf.təˈnuːn/", "mn": "下午", "ic": "🌤️", "full": ""}, {"word": "read", "ph": "/riːd/", "mn": "读；阅读", "ic": "📖", "full": ""}, {"word": "box", "ph": "/bɒks/", "mn": "盒子；箱子", "ic": "📦", "full": ""}]};
+const anims=['animation:bounce 0.8s infinite','animation:spin 1s linear infinite','animation:pulse 0.7s infinite','animation:float 1.2s infinite','animation:shake 0.5s infinite','animation:wave 0.8s infinite','animation:swing 1s infinite'];
+let currentCat=Object.keys(catMeta)[0],currentWord=null,animTimer=null;
+function playWord(rate){if(!currentWord)return;const speakText=currentWord.full||currentWord.word;const au=new Audio('https://dict.youdao.com/dictvoice?audio='+encodeURIComponent(speakText)+'&type=1');au.playbackRate=rate;au.play().catch(()=>{if('speechSynthesis' in window){const u=new SpeechSynthesisUtterance(speakText);u.lang='en-US';u.rate=rate;speechSynthesis.speak(u);}});}
+function selectWord(w,cardEl,cat){if(cat)currentCat=cat;currentWord=w;document.querySelectorAll('.word-card').forEach(c=>c.classList.remove('active'));if(cardEl)cardEl.classList.add('active');const m=catMeta[currentCat];const panel=document.getElementById('detailPanel');panel.style.display='block';document.getElementById('dCat').textContent=m.label;document.getElementById('dCat').style.cssText='background:'+m.bg+';color:'+m.color+';display:inline-block;font-size:11px;padding:3px 10px;border-radius:20px;margin-bottom:8px;font-weight:600;';document.getElementById('dWord').textContent=w.word;document.getElementById('dWord').style.color=m.color;document.getElementById('dPh').textContent=w.ph;const dFull=document.getElementById('dFull');if(w.full){dFull.textContent='全称：'+w.full;dFull.style.display='block';}else{dFull.style.display='none';}document.getElementById('dMn').textContent=w.mn;const box=document.getElementById('animBox');const icon=document.getElementById('animIcon');box.style.background=m.bg;icon.textContent=w.ic;icon.style.cssText=anims[w.word.charCodeAt(0)%anims.length]+';display:inline-block;';if(animTimer)clearTimeout(animTimer);animTimer=setTimeout(()=>{icon.style.animation='none';},3000);playWord(1);panel.scrollIntoView({behavior:'smooth',block:'nearest'});}
+function makeCard(w,cat){const d=document.createElement('div');d.className='word-card';d.innerHTML=`<span class="card-icon">${w.ic}</span><div class="card-word">${w.word}</div><div class="card-mn">${w.mn}</div>`;d.onclick=()=>selectWord(w,d,cat||currentCat);return d;}
+function renderCat(cat){currentCat=cat;document.querySelectorAll('.tab').forEach(t=>{t.classList.remove('active');t.style.background='white';t.style.color='#718096';});const at=document.querySelector('.tab[data-cat="'+cat+'"]');if(at){const m=catMeta[cat];at.classList.add('active');at.style.background=m.color;at.style.color='white';}const content=document.getElementById('mainContent');const m=catMeta[cat];const ws=words[cat];content.innerHTML='';const hdr=document.createElement('div');hdr.className='section-header';hdr.innerHTML=`<h2 style="color:${m.color}">${m.label}</h2><span class="s-count">${ws.length}个单词</span>`;content.appendChild(hdr);const grid=document.createElement('div');grid.className='cards-grid';ws.forEach(w=>grid.appendChild(makeCard(w)));content.appendChild(grid);}
+function buildTabs(){const tabBar=document.getElementById('tabBar');Object.keys(catMeta).forEach(cat=>{const m=catMeta[cat];const t=document.createElement('div');t.className='tab';t.dataset.cat=cat;t.textContent=m.label;t.onclick=()=>renderCat(cat);tabBar.appendChild(t);});}
+function doSearch(val){const q=val.trim().toLowerCase();document.getElementById('searchClear').style.display=q?'block':'none';const sr=document.getElementById('searchResults'),mc=document.getElementById('mainContent'),tabs=document.getElementById('tabBar');if(!q){sr.style.display='none';mc.style.display='';tabs.style.display='flex';return;}mc.style.display='none';tabs.style.display='none';sr.style.display='block';const hits=[];Object.keys(words).forEach(cat=>words[cat].forEach(w=>hits.push({...w,cat})));const filtered=hits.filter(w=>w.word.toLowerCase().includes(q)||w.mn.includes(q));if(!filtered.length){sr.innerHTML='<div class="search-empty">😕 没找到"'+val+'"</div>';return;}sr.innerHTML='';const grid=document.createElement('div');grid.className='cards-grid';filtered.forEach(w=>grid.appendChild(makeCard(w,w.cat)));sr.appendChild(grid);}
+function clearSearch(){document.getElementById('searchInput').value='';doSearch('');}
+buildTabs();renderCat(Object.keys(catMeta)[0]);
+</script>
+</body>
+</html>
